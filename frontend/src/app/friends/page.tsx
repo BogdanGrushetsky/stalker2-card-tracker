@@ -11,11 +11,11 @@ import { getToken, getUser } from '@/lib/auth';
 function buildTrade(mine: Card[], theirs: Card[], target: number) {
   const iCanGive = mine.filter(mc => {
     const t = theirs.find(tc => tc.id === mc.id);
-    return mc.owned > target && t !== undefined && t.owned < target;
+    return mc.owned > target && t !== undefined && t.owned === 0;
   });
   const iCanGet = theirs.filter(tc => {
     const m = mine.find(mc => mc.id === tc.id);
-    return tc.owned > target && m !== undefined && m.owned < target;
+    return tc.owned > target && m !== undefined && m.owned === 0;
   });
   return { iCanGive, iCanGet };
 }

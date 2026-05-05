@@ -78,6 +78,19 @@ export default function Home() {
       .catch(() => showToast('Помилка копіювання'));
   }, [cards, target, showToast]);
 
+  const copyExtras = useCallback(() => {
+    const extras = cards.filter(c => c.owned > target);
+    if (!extras.length) { showToast('Повторок немає!'); return; }
+    const text =
+      `S.T.A.L.K.E.R. 2 — зайві карти (мета: ${target} кол.):\n\n` +
+      extras
+        .map(c => `#${String(c.number).padStart(2, '0')} ${c.name} — зайво: ${c.owned - target}`)
+        .join('\n');
+    navigator.clipboard.writeText(text)
+      .then(() => showToast(`Скопійовано ${extras.length} карт`))
+      .catch(() => showToast('Помилка копіювання'));
+  }, [cards, target, showToast]);
+
   const stats = {
     ownedUnique: cards.filter(c => c.owned > 0).length,
     total:       cards.length,
@@ -100,6 +113,7 @@ export default function Home() {
         onTargetChange={handleTargetChange}
         onFilterChange={setFilter}
         onCopyMissing={copyMissing}
+        onCopyExtras={copyExtras}
       />
 
       <main className="main-content">

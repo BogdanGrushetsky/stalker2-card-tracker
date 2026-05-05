@@ -16,10 +16,11 @@ interface Props {
   onTargetChange: (t: number) => void;
   onFilterChange: (f: FilterType) => void;
   onCopyMissing: () => void;
+  onCopyExtras: () => void;
 }
 
 export default function ControlsBar({
-  target, filter, onTargetChange, onFilterChange, onCopyMissing,
+  target, filter, onTargetChange, onFilterChange, onCopyMissing, onCopyExtras,
 }: Props) {
   return (
     <div className="controls-bar">
@@ -51,6 +52,9 @@ export default function ControlsBar({
 
       <button className="btn-copy" onClick={onCopyMissing}>
         ⎘ Копіювати відсутні
+      </button>
+      <button className="btn-copy" onClick={onCopyExtras}>
+        ⎘ Копіювати повторки
       </button>
     </div>
   );
