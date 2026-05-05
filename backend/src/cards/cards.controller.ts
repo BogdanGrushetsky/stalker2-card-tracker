@@ -1,11 +1,14 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
   ParseIntPipe,
   UseGuards,
+  BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { CardsService } from './cards.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -26,6 +29,29 @@ export class CardsController {
   @Get('user/:id')
   getUserCards(@Param('id', ParseIntPipe) id: number) {
     return this.cards.findAll(id);
+  }
+
+  @Post('parse-notes')
+  async parseNotes(@Body('text') text: string) {
+    if (!text?.trim()) throw new BadRequestException('text is required');
+    try {
+      return await this.cards.parseNotes(text);
+    } catch (e) {
+      throw new ServiceUnavailableException(
+        e instanceof Error ? e.message : 'Ollama недоступний',
+      );
+    }
+  }
+
+  @Post('apply-parsed')
+  applyParsed(
+    @CurrentUser() user: JwtUser,
+    @Body('entries') entries: { cardNumber: number; owned: number }[],
+    @Body('mode') mode: 'full' | 'merge',
+  ) {
+    if (!entries?.length)                        throw new BadRequestException('entries required');
+    if (mode !== 'full' && mode !== 'merge')     throw new BadRequestException('mode must be full or merge');
+    return this.cards.applyParsed(user.sub, entries, mode);
   }
 
   @Patch(':id')

@@ -65,6 +65,27 @@ export async function fetchUserCards(userId: number): Promise<Card[]> {
   return handleRes(res);
 }
 
+export async function parseNotes(text: string): Promise<{ cardNumber: number; owned: number }[]> {
+  const res = await fetch(`${BASE}/cards/parse-notes`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ text }),
+  });
+  return handleRes(res);
+}
+
+export async function applyParsed(
+  entries: { cardNumber: number; owned: number }[],
+  mode: 'full' | 'merge',
+): Promise<Card[]> {
+  const res = await fetch(`${BASE}/cards/apply-parsed`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ entries, mode }),
+  });
+  return handleRes(res);
+}
+
 export async function login(username: string, password: string) {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
