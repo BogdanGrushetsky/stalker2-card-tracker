@@ -15,6 +15,7 @@ import ControlsBar from '@/components/ControlsBar';
 import CardItem from '@/components/CardItem';
 import RenameModal from '@/components/RenameModal';
 import ParseNotesModal from '@/components/ParseNotesModal';
+import AiAnalysisModal from '@/components/AiAnalysisModal';
 import Toast from '@/components/Toast';
 
 export default function Home() {
@@ -23,7 +24,8 @@ export default function Home() {
   const [target, setTarget]         = useState(1);
   const [filter, setFilter]         = useState<FilterType>('all');
   const [renameCard,    setRenameCard]    = useState<Card | null>(null);
-  const [showParseModal, setShowParseModal] = useState(false);
+  const [showParseModal,    setShowParseModal]    = useState(false);
+  const [showAiModal,       setShowAiModal]       = useState(false);
   const [toast, setToast]           = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
   const pending    = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
@@ -117,6 +119,7 @@ export default function Home() {
         onCopyMissing={copyMissing}
         onCopyExtras={copyExtras}
         onParseNotes={() => setShowParseModal(true)}
+        onAiAnalysis={() => setShowAiModal(true)}
       />
 
       <main className="main-content">
@@ -170,6 +173,13 @@ export default function Home() {
           cards={cards}
           onApplied={updated => { setCards(updated); showToast('Колекцію оновлено'); }}
           onClose={() => setShowParseModal(false)}
+        />
+      )}
+
+      {showAiModal && (
+        <AiAnalysisModal
+          target={target}
+          onClose={() => setShowAiModal(false)}
         />
       )}
 

@@ -9,7 +9,9 @@ import {
   UseGuards,
   BadRequestException,
   ServiceUnavailableException,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { CardsService } from './cards.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -29,6 +31,27 @@ export class CardsController {
   @Get('user/:id')
   getUserCards(@Param('id', ParseIntPipe) id: number) {
     return this.cards.findAll(id);
+  }
+
+  @Post('ai-analysis')
+  async aiAnalysis(
+    @CurrentUser() user: JwtUser,
+    @Body('target') target: number,
+    @Res() res: Response,
+  ) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    try {
+      for await (const chunk of this.cards.streamAnalysis(user.sub, target || 1)) {
+        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      }
+    } catch (e) {
+      res.write(`data: ${JSON.stringify({ error: e instanceof Error ? e.message : 'Ollama недоступний' })}\n\n`);
+    } finally {
+      res.end();
+    }
   }
 
   @Post('parse-notes')

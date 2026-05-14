@@ -81,6 +81,74 @@ export class CardsService implements OnModuleInit {
     return this.findById(userId, cardId);
   }
 
+  async *streamAnalysis(userId: number, target: number): AsyncGenerator<string> {
+    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    const model     = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
+
+    const cards = await this.findAll(userId);
+
+    const missing     = cards.filter(c => c.owned < target);
+    const safeToGive  = cards.filter(c => c.owned > target &&
+      ((c.owned - target) >= 2 || (c.rarity === 'common' && (c.owned - target) >= 1)));
+    const keepAsBait  = cards.filter(c => c.owned > target &&
+      (c.owned - target) === 1 && c.rarity !== 'common');
+
+    const fmt = (c: Card) =>
+      `#${String(c.number).padStart(2, '0')} ${c.name} [${c.rarity}] (є: ${c.owned}, мета: ${target})`;
+    const fmtExtra = (c: Card) =>
+      `#${String(c.number).padStart(2, '0')} ${c.name} [${c.rarity}] — зайво: +${c.owned - target}`;
+
+    const userPrompt =
+`Ти — помічник колекціонера карток S.T.A.L.K.E.R. 2. Відповідай коротко, структуровано, лише українською.
+
+Мета гравця: ${target} ${target === 1 ? 'копія' : 'копії'} кожної картки. Всього карток у грі: ${cards.length}.
+
+ВІДСУТНІ або НЕ ВИСТАЧАЄ (${missing.length}):
+${missing.length === 0 ? '(немає — молодець!)' : missing.map(fmt).join('\n')}
+
+МОЖНА СМІЛИВО ВІДДАТИ (${safeToGive.length}):
+${safeToGive.length === 0 ? '(немає)' : safeToGive.map(fmtExtra).join('\n')}
+
+ВАРТО ПРИБЕРЕГТИ ДЛЯ ОБМІНУ — рідкісні/нечасті лише з 1 зайвою (${keepAsBait.length}):
+${keepAsBait.length === 0 ? '(немає)' : keepAsBait.map(c => `#${String(c.number).padStart(2, '0')} ${c.name} [${c.rarity}]`).join('\n')}
+
+Зроби аналіз за 4 пунктами:
+1. ПРІОРИТЕТ ДЛЯ ПОШУКУ — які відсутні картки шукати насамперед (акцент на рідкісних, rare > uncommon > common)
+2. ЩО МОЖНА ВІДДАТИ — короткий перелік або загальна порада що сміливо обміняти
+3. ЧОМ БЕРЕГТИ — поясни чому картки з третього списку краще не роздавати просто так
+4. СТРАТЕГІЯ — 2-3 речення про тактику обміну
+
+Будь конкретним, без зайвих слів.`;
+
+    const res = await fetch(`${ollamaUrl}/api/chat`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: userPrompt }],
+        stream:   true,
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+
+    const reader  = res.body!.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value, { stream: true });
+      for (const line of text.split('\n').filter(l => l.trim())) {
+        try {
+          const json = JSON.parse(line) as { message?: { content?: string } };
+          if (json.message?.content) yield json.message.content;
+        } catch { /* skip malformed lines */ }
+      }
+    }
+  }
+
   async parseNotes(text: string): Promise<{ cardNumber: number; owned: number }[]> {
     const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
     const model     = process.env.OLLAMA_MODEL || 'qwen2.5:3b';

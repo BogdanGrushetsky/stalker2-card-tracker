@@ -500,9 +500,10 @@ body::after {
 /* ── FRIENDS PAGE ───────────────────────────────────── */
 .friends-section-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
   position: relative;
@@ -774,6 +775,31 @@ body::after {
 
 .btn-ai { border-color: var(--green) !important; color: var(--green) !important; }
 .btn-ai:hover { background: var(--green) !important; color: var(--bg) !important; }
+.btn-ai-analysis { border-color: var(--gold) !important; color: var(--gold) !important; }
+.btn-ai-analysis:hover { background: var(--gold) !important; color: var(--bg) !important; }
+
+/* ── AI ANALYSIS MODAL ──────────────────────────────── */
+.ai-modal {
+  width: min(680px, 93vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+.ai-analysis-text {
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: var(--text);
+  max-height: 60vh;
+  margin-bottom: 16px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-act) transparent;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.ai-cursor { color: var(--gold); animation: blink 0.9s step-end infinite; margin-left: 1px; }
 
 /* ── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 700px) {

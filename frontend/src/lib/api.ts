@@ -86,6 +86,41 @@ export async function applyParsed(
   return handleRes(res);
 }
 
+export async function* streamAnalysis(target: number): AsyncGenerator<string> {
+  const res = await fetch(`${BASE}/cards/ai-analysis`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ target }),
+  });
+
+  if (res.status === 401) { clearAuth(); window.location.href = '/login'; return; }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const reader  = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let   buffer  = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const json = JSON.parse(line.slice(6)) as { content?: string; error?: string };
+        if (json.error) throw new Error(json.error);
+        if (json.content) yield json.content;
+      } catch (e) {
+        if (e instanceof Error && e.message !== 'JSON parse error') throw e;
+      }
+    }
+  }
+}
+
 export async function login(username: string, password: string) {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',

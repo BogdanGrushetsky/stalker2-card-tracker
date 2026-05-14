@@ -4,18 +4,21 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
+import AiAnalysisModal from '@/components/AiAnalysisModal';
 import { Card, CATEGORY_ICONS, RARITY_UA } from '@/types';
 import * as api from '@/lib/api';
 import { getToken, getUser } from '@/lib/auth';
 
 function buildTrade(mine: Card[], theirs: Card[], target: number) {
+  // iCanGive: я маю більше ніж ціль, а іншому не вистачає до його цілі
   const iCanGive = mine.filter(mc => {
     const t = theirs.find(tc => tc.id === mc.id);
-    return mc.owned > target && t !== undefined && t.owned === 0;
+    return mc.owned > target && t !== undefined && t.owned < target;
   });
+  // iCanGet: інший має більше ніж ціль, а мені не вистачає до моєї цілі
   const iCanGet = theirs.filter(tc => {
     const m = mine.find(mc => mc.id === tc.id);
-    return tc.owned > target && m !== undefined && m.owned === 0;
+    return tc.owned > target && m !== undefined && m.owned < target;
   });
   return { iCanGive, iCanGet };
 }
@@ -31,6 +34,7 @@ export default function FriendsPage() {
   const [loadingCards, setLoadingCards] = useState(false);
   const [target, setTarget]           = useState(1);
   const [toast, setToast]             = useState('');
+  const [showAiModal, setShowAiModal] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const showToast = useCallback((msg: string) => {
@@ -76,6 +80,9 @@ export default function FriendsPage() {
         <div className="friends-section-header">
           <span className="friends-section-title">СТАЛКЕРИ</span>
           <span className="friends-count">{users.length} {users.length === 1 ? 'гравець' : 'гравців'}</span>
+          <button className="btn-copy btn-ai-analysis" onClick={() => setShowAiModal(true)}>
+            ◈ AI Аналіз
+          </button>
         </div>
 
         <div className="friends-list">
@@ -195,6 +202,13 @@ export default function FriendsPage() {
         )}
 
       </main>
+      {showAiModal && (
+        <AiAnalysisModal
+          target={target}
+          onClose={() => setShowAiModal(false)}
+        />
+      )}
+
       <Toast message={toast} />
     </>
   );

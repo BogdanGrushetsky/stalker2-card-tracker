@@ -18,10 +18,11 @@ interface Props {
   onCopyMissing: () => void;
   onCopyExtras: () => void;
   onParseNotes: () => void;
+  onAiAnalysis: () => void;
 }
 
 export default function ControlsBar({
-  target, filter, onTargetChange, onFilterChange, onCopyMissing, onCopyExtras, onParseNotes,
+  target, filter, onTargetChange, onFilterChange, onCopyMissing, onCopyExtras, onParseNotes, onAiAnalysis,
 }: Props) {
   return (
     <div className="controls-bar">
@@ -59,6 +60,9 @@ export default function ControlsBar({
       </button>
       <button className="btn-copy btn-ai" onClick={onParseNotes}>
         ✦ AI Розпізнати
+      </button>
+      <button className="btn-copy btn-ai-analysis" onClick={onAiAnalysis}>
+        ◈ AI Аналіз
       </button>
     </div>
   );
