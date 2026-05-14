@@ -15,7 +15,19 @@ async function proxy(req: NextRequest, context: { params: { path: string[] } }) 
   const body =
     req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined;
 
-  const res  = await fetch(url, { method: req.method, headers, body });
+  const res = await fetch(url, { method: req.method, headers, body });
+
+  if ((res.headers.get('content-type') ?? '').includes('text/event-stream')) {
+    return new Response(res.body, {
+      status: res.status,
+      headers: {
+        'Content-Type':  'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection':    'keep-alive',
+      },
+    });
+  }
+
   const data = await res.json().catch(() => null);
   return NextResponse.json(data, { status: res.status });
 }
